@@ -51,6 +51,28 @@ Usage
 
 
 
+Config
+========================================
+
+``~/.config/zdict.qt/config.ini``
+
+.. code-block:: ini
+
+    [Theme]
+    ColorScheme=GreenOnBlack
+
+    [Font]
+    Size=14
+    Family=San Serif
+
+    [Window]
+    SizeX=600
+    SizeY=400
+
+    [Buffer]
+    Buffer=Selection
+
+
 License
 ========================================
 
