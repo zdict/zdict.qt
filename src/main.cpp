@@ -2,6 +2,8 @@
 #include <QMainWindow>
 #include <QCursor>          // for cursor position
 #include <QClipboard>       // for buffers change signals
+#include <QSettings>        // for INI settings
+#include <QStandardPaths>   // for system config path
 #include <QtDebug>
 
 #include <qtermwidget.h>    // for terminal support (we need VT100)
@@ -35,27 +37,46 @@ int main(int argc, char *argv[]) {
     mainWindow->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);    // popup window
 
     ////////////////////////////////////////
+    // Load Settings
+    ////////////////////////////////////////
+
+    const auto configPath = QStandardPaths::standardLocations(QStandardPaths::GenericConfigLocation)[0]
+                            + "/zdict.qt/config.ini";
+    QSettings settings(configPath, QSettings::IniFormat);
+
+    ////////////////////////////////////////
     // Font
     ////////////////////////////////////////
 
     auto font = QApplication::font();
-    font.setPointSize(14);
+
+    const auto fontSize = settings.value("Font/Size", 14).toUInt();
+    const auto family   = settings.value("Font/Family", "San Serif").toString();
+
+    font.setPointSize(fontSize);
+    font.setFamily(family);
+
     console->setTerminalFont(font);
 
     ////////////////////////////////////////
     // Theme
     ////////////////////////////////////////
 
-    console->setColorScheme("GreenOnBlack");
+    const auto colorscheme = settings.value("Theme/ColorScheme", "GreenOnBlack").toString();
+    console->setColorScheme(colorscheme);
     console->setScrollBarPosition(QTermWidget::ScrollBarRight);
 
     ////////////////////////////////////////
     // Window Setting
     ////////////////////////////////////////
 
+    const auto windowSizeX = settings.value("Window/SizeX", 600).toInt();
+    const auto windowSizeY = settings.value("Window/SizeY", 400).toInt();
+    const QSize windowSize(windowSizeX, windowSizeY);
+
     mainWindow->move(QCursor::pos());
     mainWindow->setCentralWidget(console);
-    mainWindow->resize(600, 400);
+    mainWindow->resize(windowSize);
 
     ////////////////////////////////////////
     // Information
@@ -72,12 +93,19 @@ int main(int argc, char *argv[]) {
     // Signal & Slots
     ////////////////////////////////////////
 
+    const auto buffer = settings.value("Buffer/Buffer", "Selection").toString();
+    QClipboard::Mode mode = QClipboard::Selection;
+
+    if (buffer == "Clipboard") {
+        mode = QClipboard::Clipboard;
+    }
+
     const auto *clipboard = QApplication::clipboard();
 
     const auto show_and_query = [=] () {
             mainWindow->move(QCursor::pos());
             mainWindow->show();
-            const auto word = clipboard->text(clipboard->Selection);
+            const auto word = clipboard->text(mode);
             console->sendText(word + "\n");
         };
 
